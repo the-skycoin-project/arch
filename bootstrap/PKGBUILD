@@ -1,0 +1,38 @@
+# Maintainer: Moses Narrow <moe_narrow@use.startmail.com>
+pkgname=bootstrap
+_pkgname=bootstrap
+pkgdesc="archlinux(arm) skywire bootstrapping & local repo configuration"
+pkgver=0.0.1
+pkgrel=1
+arch=('any')
+license=()
+makedepends=()
+source=(
+"fixinternet.sh"
+"fixinternet.service"
+"macchanger.service"
+"nodebootstrap.sh"
+"bootstrap-alarm.sh"
+"bootstrap.sh"
+)
+sha256sums=('6c0d38114d8ed695539adb1e3f6e2a260247758c814386097ae3cdab78314fdb'
+            '83991c43e9367a32dfb0da05235cbdcd902a0c63d037e5b0e21f39900233cad4'
+            '01319ab9a08ebe4f21a6da948361c44553c2b53f8c70730c6c6c9ddba591467a'
+            '11e3d6a1591f6cce8d760eacc18bb582d85e9720aea994356860de797ce8d623'
+            'e94457ee8d6dc35a77acea0da7b699d1f02171954ab8cf168a2c081baddc0330'
+            '1537bbfd2cdc979d34e76154a2174e2b5502d69e22bf21dac1dc01e58167c01a')
+
+package() {
+	_rmextension=".sh"
+	_scripts=$(ls *.sh)
+	_services=$(ls *.service)
+for i in $_scripts ; do
+  install -Dm755 ${i} ${pkgdir}/usr/bin/${i//$rmextension}
+	#install -Dm755 ${i} ${pkgdir}/usr/lib/skycoin/${_pkgname}/${i}
+	#ln -rTsf ${pkgdir}/usr/lib/skycoin/${pkgname1}/${i} ${pkgdir}/usr/bin/${i//$rmextension}
+	#chmod +x ${pkgdir}/usr/lib/skycoin/${pkgname1}/${i}
+done
+for i in $_services ; do
+	install -Dm644 ${i} ${pkgdir}/usr/lib/systemd/system/${i}
+	done
+}

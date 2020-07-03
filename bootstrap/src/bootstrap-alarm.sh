@@ -1,0 +1,1 @@
+/run/media/backups/backups/d0mobackups/GITHUB/skyminer-archlinuxarm/bootstrap/bootstrap-alarm.sh

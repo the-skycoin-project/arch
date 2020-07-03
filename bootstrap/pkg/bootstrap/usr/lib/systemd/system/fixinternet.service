@@ -1,0 +1,12 @@
+[Unit]
+Description=fix internet service
+After=network.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/fixinternet
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
