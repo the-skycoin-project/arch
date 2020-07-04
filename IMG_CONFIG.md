@@ -1,23 +1,20 @@
 # Installation
 
-## Release Images
+## Download a Release Image
 
-The eight IP preset images for the official skyminer comprise two archives:
-
-* [Nodes 1-4](https://github.com/Skyfleet/skyminer-archlinuxarm/releases/download/skyminer-official/nodes1to4.tar.gz)
-* [Nodes 5-8](https://github.com/Skyfleet/skyminer-archlinuxarm/releases/download/skyminer-official/nodes5to8.tar.gz)
-
-DHCP images for various boards can be found at these links:
-
-* [Orange Pi Prime](https://github.com/Skyfleet/skyminer-archlinuxarm/releases/download/skyminer/orangepiprime-archlinux-aarch64.img.tar.gz)
+* [Orange Pi Prime](https://github.com/Skyfleet/archlinuxarm/releases/download/skyminer/orangepiprime-archlinux-aarch64.img.tar.gz)
 * [Pine64](https://github.com/Skyfleet/skyminer-archlinuxarm/releases/download/skyminer/pine64-archlinux-aarch64.img.tar.gz)
 * [RPi 2](https://github.com/Skyfleet/skyminer-archlinuxarm/releases/download/skyminer/rpi2-archlinux-armv7.img.tar.gz)
 * [RPi 3](https://github.com/Skyfleet/skyminer-archlinuxarm/releases/download/skyminer/rpi3-archlinux-armv7.img.tar.gz)
 * [RPi 4](https://github.com/Skyfleet/skyminer-archlinuxarm/releases/download/skyminer/rpi4-archlinux-armv8.img.tar.gz)
 
-You can also [create any image](/IMG_CREATOR.md) such as a custom IP preset image for a specific board
+DHCP images are provided by the above links. If you require ip-preset images please create them with the image-creator.sh script as detailed [here](/IMG_CREATOR.md).
 
-Extract the image from the archive once you have downloaded it (usually left-click -> extract).
+## Extract the image from the archive
+
+Usually right-click -> extract.
+
+*Tip: you can use the tar command in the linux subsystem for windows*
 
 ## Writing the image to a microSD card (linux)
 
@@ -26,108 +23,124 @@ Identify your microSD card using the output of `lsblk` and flash the created ima
 $ sudo dd if=arch-linux-X-XXXXXXXX.img of=/dev/sdX
 ```
 
-**When the image has been written to the microSD card, expand the rootFS partition to occupy the rest of the microSD card**
+## Expand the rootFS partition to occupy the rest of the microSD card
 
-*Repeat this step for every node in your skyminer.*
+To expand the root filesystem partition, I use `gnome-disks`.
+Many utilities exist on linux for doing this including `parted` `gparted` `cfdisk` just to name a few.
+
+*Tip: you will repeat this step for every node in your skyminer.*
 
 ## Writing the image to a microSD card (windows)
 
 Windows users should use the [rufus](https://github.com/pbatard/rufus/releases) utility to write the image to the microSD card.
 
-Be sure to **expand the rootFS partition to occupy the rest of the microSD card**
+**Be sure you don't forget to expand the rootFS partition to occupy the rest of the microSD card!**
+Forgetting to expand the root partition is the number 1 source of errors. I am unfamiliar with the process for doing this on windows.
 
-## Procedure
+## Bootstrapping Procedure Overview
 
-It is critical to run this configuration on only *one node at a time*
+First and foremost:
+**Power on only one board at a time to avoid mac address conflicts**
 
-* Run the configuration script for manager or node
-* wait for the board to reboot
-* check the web interface in your browser *before powering on additional nodes.*
-* clear your browser cache (`ctrl+shift+del`) every time you expect to see a new node in the manager's web interface
+* Insert the microSD card into the board
+* Power on the board
+* SSH to the board
+* Run the bootstrapping script for manager or node
+* Wait for the board to reboot
+* SSH to the board again
+* Install your desired software (skywire)
 
 Newly connected (dhcp) nodes can be reached with `ssh alarm@alarm`
 
 *Note on rpis this may instead be:* `alarm@alarmpi`
 
-Note: hostname resolution doesn't work with the official router: *use the IP address of the image instead of the hostname such as: `ssh alarm@192.168.0.2`* if using IP preset images
+Note: if hostname resolution doesn't work with your router *use the IP address of the image instead of the hostname such as: `ssh alarm@192.168.0.2`*
+
+You may need to determine the IP address of the board from your router's interface.
+
+Typically this is something like [http://192.168.0.1](http://192.168.0.1) or [http://192.168.0.1](http://192.168.0.1)
+
+*Tip: if your image has a static IP set, it will not show up in the list of DHCP clients*
 
 You will need to remove the line in ~/.ssh/known_hosts every time before attempting to connect to a new node by it's hostname; i.e.:
 ```
 grep -v "^alarm" $HOME/.ssh/known_hosts > $HOME/.ssh/known_hosts.bak && mv $HOME/.ssh/known_hosts.bak $HOME/.ssh/known_hosts
 ```
 
-# Image configuration
+# Bootstrapping Procedure Details
 
-## Manager Setup
+I would encourage users to scrutinize the [bootstrap.sh](/bootstrap/bootstrap.sh) and [bootstrap-alarm.sh](bootstrap/bootstrap-alarm.sh) scripts for the details of the bootstrapping procedure. Basic bootstrapping is detailed on [archlinuxarm.org](https://archlinuxarm.org)
 
 Insert the microSD card into your manager board, and access the board via ssh:
 ```
 ssh alarm@alarm
 #password is alarm
+```
+
+Become root:
+```
 su - root
 #password is root
 ```
-If using official hardware, substituite the hostname `alarm` with the IP address of the manager - 192.168.0.2
 
-To configure a manager, run the setup for the manager as root with:
+Run the provided bootstrapping script
 ```
-skybootstrap
-```
-
-It will take 15-20 minutes for the configuration and software updates to complete, at which point the board should reboot.
-When the board has rebooted, it's hostname will be `skymanager`, and the board will be reachable with `ssh alarm@skymanager`
-
-Before continuing to the node setup, check the manager interface in your web browser (for example: 192.168.0.2:8000)
-Also check that the readonly-cache service is working with your web browser (for example: 192.168.0.2:8080)
-This should show a directory listing of all currently installed packages on the manager.
-
-## Node Setup
-
-You will need to remove the line in ~/.ssh/known_hosts every time before attempting to connect to a new node; i.e.:
-```
-grep -v "^alarm" $HOME/.ssh/known_hosts > $HOME/.ssh/known_hosts.bak && mv $HOME/.ssh/known_hosts.bak $HOME/.ssh/known_hosts
+bootstrap
 ```
 
-Insert the microSD card into the node, and access the board via ssh:
-```
-ssh alarm@alarm
-#password is alarm
-su - root
-#password is root
-```
-If using official hardware, substituite the hostname `alarm` with the IP address of the node - 192.168.0.3 to 192.168.0.9
+It may take 15-20 minutes for the initial configuration and software updates to complete, at which point the board should reboot.
 
+## Installing Skywire
 
-To configure additional nodes (the manager **must** be set up and running first):
+Access the alarm account on the board via ssh as detailed above.
 
+Install skywire with one of the following commands;
+
+For the latest binary release:
 ```
-nodebootstrap
+yay -S skywire-bin
 ```
 
-Enter the IP address of your manager if / when prompted.
-You may also provide the manager ip address as an argument to `nodebootstrap`
-for example:
+To build from the latest github sources on the develop branch:
 ```
-nodebootstrap 192.168.0.2
+yay -S skywire
 ```
 
-You will be prompted to enter a unique identifier for the node in order to change it's hostname (non ip-presetted images).
-This identifier will be prepended to `node`
+The usual configuration steps have been carried out at the packaging level to automatically configure and start a visor and hypervisor.
+To configure aditional nodes to appear in the hypervisor interface, you must run the following:
 
-The board should reboot when the configuration is completed, and the hostname will be changed to `node#`
-
-You will need to remove the line in ~/.ssh/known_hosts every time before attempting to connect to a new node; i.e.
 ```
-grep -v "^alarm" $HOME/.ssh/known_hosts > $HOME/.ssh/known_hosts.bak && mv $HOME/.ssh/known_hosts.bak $HOME/.ssh/known_hosts
+skywire
 ```
 
-## Changing Skymanager IP address in the nodes
+as the script completes it will prompt you to run or start the readonly-cache service.
+```
+readonly-cache
+```
 
-In the instance they you have relocated your skyminer or deleted the DHCP lease in the router, the following can be run on the nodes to change the manager IP address in the skywire node start script (*as root*):
+## Setting up additional nodes faster
+
+When you have one board running archlinuxARM on your local network, you can bootstrap additional nodes much faster by first configuring them to use the shared package cache of the first board. In addition to acting as an update mirror, all created AUR packages (which include `skywire`, `yay`, etc.) are added to a local package repoitory. Here is how to configure each of these:
+
+add this to /etc/pacman.conf
 ```
-skywire-node-setup <skymanager-ip>
+[aur-local]
+SigLevel = PackageOptional
+Server = http://<ip-of-other-machine-on-lan>:8079
 ```
-replace <skymanager-ip> with the actual IP address of skymanager on your LAN
+
+Add this to /etc/pacman.d/mirrorlist
+```
+Server = http://<ip-of-other-machine-on-lan>:8079
+```
+
+Then run the `bootstrap` command as root
+
+## Configuring additional Visors with the hypervisor key
+
+Before you install skywire on additional boards, install the hypervisorconfig package. This pacage is provided by the local package repo on the first board you configured.
+
+After installing skywire, the visor will appear in the hypervisor.
 
 ## OS Updates
 
@@ -150,57 +163,6 @@ yay -Syy
 yay -Syu
 ```
 
-## Updating Skywire to the latest commits
+## Troubleshooting no DNS on the board
 
-**To update your skywire installaion** or any AUR package, install or reinstall it on the manager.
-*This must be done from a user account.*
-```
-yay -S --noconfirm skywire
-```
-*Be sure to cleanbuild the package.*
-*If you encounter issues:*
-```
-rm -rf $HOME/.cache/yay/skywire
-```
-
-Any packages in yay's cache can be added to the skyminer repo with the command:
-```
-skyminer-repo-update
-```
-*the package does not have to be installed on skymanager to be available to the nodes, but must exist in the package cache*
-
-Check that the readonly-cache service is running by going to the `<skymanager-ip>:8080` in a web browser, replacing `<skymanager-ip>` with the actual ip address of skymanager on your LAN.
-
-If the readonly-cache service is not running, you can start it explicitly with
-```
-sudo readonly-cache
-```
-or
-```
-sudo systemctl start readonly-cache
-```
-
-On the nodes, a full system update should download the newer version of the skywire package from the skyminer repo on the manager and install it. The following commands must be run with root or sudo on each node:
-```
-pacman -Syy
-pacman -Syu
-```
-
-## Updating From Testnet to Mainnet
-
-The procedure as described above still holds.
-On the manager (*This must be done from a user account*):
-```
-yay -Syy
-yay -Syu
-yay -S --noconfirm skywire-mainnet
-skyminer-repo-update
-#start the readonly-cache service if it's not running
-```
-
-On each of the the nodes, (*as root*):
-```
-pacman -Syy
-pacman -Syu
-pacman -S skywire-mainnet
-```
+The `systemd-resolved.service` is to blame for this. Stop / start it until DNS becomes responsive.

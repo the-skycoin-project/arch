@@ -4,7 +4,8 @@
 * Raspberry Pi 3 & 4
 * Pine64
 * Orange Pi Prime
+* Orange Pi Zero
 
-[Skyminer-archlinuxarm installation and configuration guide](/IMG_CONFIG.md)
+[ArchlinuxARM Bootstrapping guide](/IMG_CONFIG.md)
 
 [Building new images from source](/IMG_CREATOR.md)

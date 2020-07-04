@@ -14,11 +14,11 @@ Tested on Arch Linux
 
 Download the script and make it executable:
 ```
-git clone https://github.com/Skyfleet/skyminer-archlinuxarm
-cd skyminer-archlinuxarm
+git clone https://github.com/Skyfleet/archlinuxarm
+cd archlinuxarm
 chmod +x *.sh
 ```
-Note: *any packages included in the skyminer directory will be installed to the created image*
+Note: *any packages included in the bootstrap directory will be installed to the created image*
 
 Run the script as root and select your board from the prompt:
 ```
@@ -26,5 +26,7 @@ sudo ./image-creator.sh -v
 ```
 
 After this, the image has been created.
+
+*Release images in this repository are configured for DHCP*
 
 At this point, you will want to continue to the [image installation and configuration guide](/IMG_CONFIG.md)

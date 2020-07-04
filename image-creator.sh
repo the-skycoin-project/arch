@@ -132,7 +132,7 @@ if [ -d "$_packagedir" ]; then
   umount arch-root/dev/pts
   umount arch-root/dev
 fi
-umount arch-boot arch-root
+umount arch-root
 losetup -d /dev/loop0
 mv $ARCHPRIMEIMG $IMG
 fi
@@ -144,9 +144,10 @@ fi
 create_orpi_zero_img() {
   PLATFORM=orangepizero
   ARCHZERO=ArchZeroH2
+  #https://github.com/0pcom/skyalarm-old/releases/download/ArchZeroH2/ArchLinuxARM-OrangePiZero-latest.img.tar.xz
   #https://github.com/0pcom/skyalarm-old/releases/download/ArchZeroH2/ArchLinuxARM-OrangePiZero-latest.img.xz
-  ORPIBASEURL=https://github.com/0pcom/skyalarm-old/releases/download/$ARCHZERO
   ARCHZEROXZ=ArchLinuxARM-OrangePiZero-latest.img.tar.xz
+  ORPIBASEURL=https://github.com/0pcom/skyalarm-old/releases/download/$ARCHZERO/
   ARCHZEROIMG=ArchLinuxARM-OrangePiZero-latest.img
   IMG=$PLATFORM-$ARMV7IMG
   FULLIMGNAME=$PLATFORM-$ARMV7
@@ -192,7 +193,7 @@ create_orpi_zero_img() {
       umount arch-root/dev/pts
       umount arch-root/dev
     fi
-      umount arch-boot arch-root
+      umount arch-root
       losetup -d /dev/loop0
       mv $ARCHZEROIMG $IMG
     fi
@@ -269,7 +270,7 @@ fi
     umount arch-root/dev/pts
     umount arch-root/dev
   fi
-    umount arch-boot arch-root
+    umount arch-root
   losetup -d /dev/loop0
 fi
 if [ -f $IMG ]; then
