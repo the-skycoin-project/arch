@@ -24,7 +24,7 @@ Identify your microSD card using the output of `lsblk` and flash the created ima
 $ sudo dd if=arch-linux-X-XXXXXXXX.img of=/dev/sdX
 ```
 
-## 3) Writing the image to a microSD card (windows)
+## 3) Write the image to a microSD card (windows)
 
 Windows users should use the [rufus](https://github.com/pbatard/rufus/releases) utility to write the image to the microSD card.
 
