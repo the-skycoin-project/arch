@@ -53,7 +53,7 @@ bootstrap
 
 It may take 15-20 minutes for the initial configuration and software updates to complete, at which point the board should reboot.
 
-## 3) Installing Skywire
+## 3) Install Skywire
 
 Access the alarm account on the board via ssh as detailed in step 1.
 
