@@ -25,29 +25,7 @@ ensure_cleanup() {
 }
 ensure_cleanup
 
-create_rpi_img(){
-if [ ! -f $IMG ]; then
-  set -ex
-	losetup /dev/loop0 && exit 1 || true
-  if [ ! -f "$RPIMG" ]; then
-	wget -N $URL
-fi
-	truncate -s 2G $IMG
-	losetup /dev/loop0 $IMG
-	parted -s /dev/loop0 mklabel msdos
-	parted -s /dev/loop0 unit MiB mkpart primary fat32 -- 1 128
-	parted -s /dev/loop0 set 1 boot on
-	parted -s /dev/loop0 unit MiB mkpart primary ext2 -- 128 -1
-	parted -s /dev/loop0 print
-	mkfs.vfat -n SYSTEM /dev/loop0p1
-	mkfs.ext4 -L root -b 4096 -E stride=4,stripe_width=1024 /dev/loop0p2
-	mkdir -p arch-boot
-	mount /dev/loop0p1 arch-boot
-	mkdir -p arch-root
-	mount /dev/loop0p2 arch-root
-	bsdtar -xpf $RPIMG -C arch-root
-	sed -i "s/ defaults / defaults,noatime /" arch-root/etc/fstab
-	mv arch-root/boot/* arch-boot/
+modify_chroot() {
   #add bootstrapping packages
   if [ -d "$_packagedir" ]; then
     cd $_packagedir
@@ -56,8 +34,7 @@ fi
     for i in $toinstall; do
     cp $_packagedir/$i arch-root/root/$i
     done
-    #cp $WORKINGDIR/profile_skyalarm arch-root/etc/
-    #echo -e "[[ -f /etc/profile_skyalarm ]] && . /etc/profile_skyalarm" >> arch-root/etc/profile
+    cp pacman.conf arch-root/etc/pacman.conf
     cp /usr/bin/qemu-arm-static arch-root/usr/bin
     #	arch-chroot arch-root pacman -U /root/*.pkg.tar.xz --noconfirm
     #manually chroot to support image creation on other distros
@@ -72,69 +49,81 @@ fi
     umount arch-root/dev/pts
     umount arch-root/dev
   fi
-    umount arch-boot arch-root
+
+}
+
+create_rpi_img(){
+  #rpi2
+  #IMG=rpi2-archlinux-armv7-$(date +%Y%m%d)
+  #URL=$BASEURL/ArchLinuxARM-rpi-2-latest.tar.gz
+  #RPIMG=ArchLinuxARM-rpi-2-latest.tar.gz
+  #rpi3
+  #IMG=rpi3-archlinux-armv7-$(date +%Y%m%d)
+  #URL=$BASEURL/ArchLinuxARM-rpi-3-latest.tar.gz
+  #RPIMG=ArchLinuxARM-rpi-3-latest.tar.gz
+  #rpi4
+  #IMG=rpi4-archlinux-armv8-$(date +%Y%m%d)
+  #URL=$BASEURL/ArchLinuxARM-rpi-4-latest.tar.gz
+  #RPIMG=ArchLinuxARM-rpi-4-latest.tar.gz
+
+#check for an image alerady created
+IMGPATH=$SRCDIR/$IMG
+ROOTFSGZPATH=$SRCDIR/$RPIMG
+if [ ! -f $IMGPATH  ]; then
+  set -ex
+	losetup /dev/loop0 && exit 1 || true
+  if [ ! -f "$ROOTFSGZPATH" ]; then
+	wget -P $SRCDIR -N $URL
+fi
+	truncate -s 2G $IMGPATH
+	losetup /dev/loop0 $IMGPATH
+	parted -s /dev/loop0 mklabel msdos
+	parted -s /dev/loop0 unit MiB mkpart primary fat32 -- 1 128
+	parted -s /dev/loop0 set 1 boot on
+	parted -s /dev/loop0 unit MiB mkpart primary ext2 -- 128 -1
+	parted -s /dev/loop0 print
+	mkfs.vfat -n SYSTEM /dev/loop0p1
+	mkfs.ext4 -L root -b 4096 -E stride=4,stripe_width=1024 /dev/loop0p2
+	mkdir -p arch-boot
+	mount /dev/loop0p1 arch-boot
+	mkdir -p arch-root
+	mount /dev/loop0p2 arch-root
+	bsdtar -xpf $ROOTFSGZPATH -C arch-root
+	sed -i "s/ defaults / defaults,noatime /" arch-root/etc/fstab
+	mv arch-root/boot/* arch-boot/
+  modify_chroot
+  umount arch-boot arch-root
   losetup -d /dev/loop0
 fi
-if [ -f $IMG ]; then
+if [ -f $IMGPATH ]; then
 img_created
 fi
 }
 
 
 create_orpi_prime_img() {
-  PLATFORM=orangepiprime
-  ARCHPRIME=ArchPrimeH5
-  ORPIBASEURL=https://github.com/0pcom/skyalarm-old/releases/download/$ARCHPRIME/
-  ARCHPRIMEXZ=$ARCHPRIME.img.tar.xz
-  ARCHPRIMEIMG=$ARCHPRIME.img
-  IMG=$PLATFORM-$AARCH64IMG
-  FULLIMGNAME=$PLATFORM-$AARCH64
-  URL=$BASEURL$GENERICAARCH64GZ
-  URL1=$ORPIBASEURL$ARCHPRIMEXZ
+  IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d).img
 
 if [ ! -f $IMG ]; then
   set -ex
-  if [ ! -f "$GENERICAARCH64GZ" ]; then
-    wget -N $URL
+  if [ ! -f $SRCDIR/ArchLinuxARM-aarch64-latest.tar.gz ]; then
+    wget -P $SRCDIR -N $BASEURL/ArchLinuxARM-aarch64-latest.tar.gz
   fi
-  if [ ! -f "$ARCHPRIMEXZ" ]; then
-    wget -N $URL1
+  if [ ! -f $SRCDIR/ArchPrimeH5.img.tar.xz ]; then
+    wget -P $SRCDIR -N https://github.com/0pcom/skyalarm-old/releases/download/ArchPrimeH5/ArchPrimeH5.img.tar.xz
   fi
-  bsdtar -xpf $ARCHPRIMEXZ
-	gnome-disk-image-mounter -w $ARCHPRIMEIMG
+  bsdtar -xpf $SRCDIR/ArchPrimeH5.img.tar.xz -C $SRCDIR
+	gnome-disk-image-mounter -w $SRCDIR/ArchPrimeH5.img
 	mkdir -p arch-root
 	mount  /dev/loop0p2 arch-root
-	cd arch-root
-	rm -rf bin dev home mnt proc run srv tmp var etc lib opt root sbin sys usr
-	cd $WORKINGDIR
-	bsdtar -xpf $GENERICAARCH64GZ -C arch-root --exclude 'boot'
-#add bootstrapping packages
-if [ -d "$_packagedir" ]; then
-  cd $_packagedir
-  toinstall=$(ls *.pkg.tar.*)
-  cd ..
-  for i in $toinstall; do
-  cp $_packagedir/$i arch-root/root/$i
-  done
-  #cp $WORKINGDIR/profile_skyalarm arch-root/etc/
-  #echo -e "[[ -f /etc/profile_skyalarm ]] && . /etc/profile_skyalarm" >> arch-root/etc/profile
-  cp /usr/bin/qemu-arm-static arch-root/usr/bin
-  #	arch-chroot arch-root pacman -U /root/*.pkg.tar.xz --noconfirm
-  #manually chroot to support image creation on other distros
-  mount -t proc /proc arch-root/proc
-  mount -o bind /dev arch-root/dev
-  mount -o bind /dev/pts arch-root/dev/pts
-  mount -o bind /sys arch-root/sys
-  chroot arch-root /bin/bash -c "pacman -U /root/*.pkg.tar.* --noconfirm"
-  rm arch-root/usr/bin/qemu-arm-static
-  umount arch-root/proc
-  umount arch-root/sys
-  umount arch-root/dev/pts
-  umount arch-root/dev
-fi
+	#cd arch-root
+	rm -rf arch-root/bin arch-root/dev arch-root/home arch-root/mnt arch-root/proc arch-root/run arch-root/srv arch-root/tmp arch-root/var arch-root/etc arch-root/lib arch-root/opt arch-root/root arch-root/sbin arch-root/sys arch-root/usr
+	#cd $WORKINGDIR
+	bsdtar -xpf $SRCDIR/ArchLinuxARM-aarch64-latest.tar.gz -C arch-root --exclude 'boot'
+modify_chroot
 umount arch-root
 losetup -d /dev/loop0
-mv $ARCHPRIMEIMG $IMG
+mv $SRCDIR/ArchPrimeH5.img $OUTDIR/$IMG
 fi
 if [ -f $IMG ]; then
 img_created
@@ -142,82 +131,45 @@ fi
 }
 
 create_orpi_zero_img() {
-  PLATFORM=orangepizero
-  ARCHZERO=ArchZeroH2
   #https://github.com/0pcom/skyalarm-old/releases/download/ArchZeroH2/ArchLinuxARM-OrangePiZero-latest.img.tar.xz
-  #https://github.com/0pcom/skyalarm-old/releases/download/ArchZeroH2/ArchLinuxARM-OrangePiZero-latest.img.xz
-  ARCHZEROXZ=ArchLinuxARM-OrangePiZero-latest.img.tar.xz
-  ORPIBASEURL=https://github.com/0pcom/skyalarm-old/releases/download/$ARCHZERO/
-  ARCHZEROIMG=ArchLinuxARM-OrangePiZero-latest.img
-  IMG=$PLATFORM-$ARMV7IMG
-  FULLIMGNAME=$PLATFORM-$ARMV7
-  URL=$BASEURL$ARMV7GZ
-  URL1=$ORPIBASEURL$ARCHZEROXZ
-  if [ ! -f $IMG ]; then
+  IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d).img
+  if [ ! -f "$SRCDIR/$IMG" ]; then
     set -ex
-    if [ ! -f "$ARMV7GZ" ]; then
-      wget -N $URL
+    if [ ! -f "$SRCDIR/ArchLinuxARM-armv7-latest.tar.gz" ]; then
+      wget -P $SRCDIR -N $BASEURL/ArchLinuxARM-armv7-latest.tar.gz
     fi
-    if [ ! -f "$ARCHZEROXZ" ]; then
-      wget -N $URL1
+    if [ ! -f "$SRCDIR/ArchLinuxARM-OrangePiZero-latest.img.tar.xz" ]; then
+      wget -P $SRCDIR -N https://github.com/0pcom/skyalarm-old/releases/download/ArchZeroH2/ArchLinuxARM-OrangePiZero-latest.img.tar.xz
     fi
-    bsdtar -xpf $ARCHZEROXZ
-    gnome-disk-image-mounter -w $ARCHZEROIMG
+    bsdtar -xpf $SRCDIR/ArchLinuxARM-OrangePiZero-latest.img.tar.xz -C $SRCDIR
+    gnome-disk-image-mounter -w $SRCDIR/ArchLinuxARM-OrangePiZero-latest.img
     mkdir -p arch-root
     mount  /dev/loop0p1 arch-root
-    cd arch-root
-    rm -rf bin dev home mnt proc run srv tmp var etc lib opt root sbin sys usr
-    cd $WORKINGDIR
-    bsdtar -xpf $ARMV7GZ -C arch-root --exclude 'boot'
-    #add bootstrapping packages
-    if [ -d "$_packagedir" ]; then
-      cd $_packagedir
-      toinstall=$(ls *.pkg.tar.*)
-      cd ..
-      for i in $toinstall; do
-      cp $_packagedir/$i arch-root/root/$i
-      done
-      #cp $WORKINGDIR/profile_skyalarm arch-root/etc/
-      #echo -e "[[ -f /etc/profile_skyalarm ]] && . /etc/profile_skyalarm" >> arch-root/etc/profile
-      cp /usr/bin/qemu-arm-static arch-root/usr/bin
-      #	arch-chroot arch-root pacman -U /root/*.pkg.tar.xz --noconfirm
-      #manually chroot to support image creation on other distros
-      mount -t proc /proc arch-root/proc
-      mount -o bind /dev arch-root/dev
-      mount -o bind /dev/pts arch-root/dev/pts
-      mount -o bind /sys arch-root/sys
-      chroot arch-root /bin/bash -c "pacman -U /root/*.pkg.tar.* --noconfirm"
-      rm arch-root/usr/bin/qemu-arm-static
-      umount arch-root/proc
-      umount arch-root/sys
-      umount arch-root/dev/pts
-      umount arch-root/dev
-    fi
-      umount arch-root
-      losetup -d /dev/loop0
-      mv $ARCHZEROIMG $IMG
-    fi
+    rm -rf arch-root/bin arch-root/dev arch-root/home arch-root/mnt arch-root/proc arch-root/run arch-root/srv arch-root/tmp arch-root/var arch-root/etc arch-root/lib arch-root/opt arch-root/root arch-root/sbin arch-root/sys arch-root/usr
+    bsdtar -xpf $SRCDIR/ArchLinuxARM-armv7-latest.tar.gz -C arch-root --exclude 'boot'
+    modify_chroot
+    umount arch-root
+    losetup -d /dev/loop0
+    mv $SRCDIR/ArchLinuxARM-OrangePiZero-latest.img $IMG
+  fi
     if [ -f $IMG ]; then
       img_created
     fi
 }
 
 create_pine64_img(){
-  PLATFORM=pine64
-  BASEURL1=${BASEURL}allwinner/boot/pine64/
-  BOOTSCR=boot.scr
-  UBOOT=u-boot-sunxi-with-spl.bin
-  IMG=$PLATFORM-$AARCH64IMG
+
+  IMG=pine64-archlinux-aarch64-$(date +%Y%m%d).img
   FULLIMGNAME=$PLATFORM-$AARCH64
-  URL=$BASEURL$GENERICAARCH64GZ
+
   URL1=$BASEURL1$BOOTSCR
   URL2=$BASEURL1$UBOOT
 
 if [ ! -f $IMG ]; then
   set -ex
 	losetup /dev/loop0 && exit 1 || true
-  if [ ! -f "$GENERICAARCH64GZ" ]; then
-    wget -N $URL
+  if [ ! -f "$SRCDIR/ArchLinuxARM-aarch64-latest.tar.gz" ]; then
+    wget -P $SRCDIR -N $BASEURL/ArchLinuxARM-aarch64-latest.tar.gz
   fi
 	truncate -s 2G $IMG
 	losetup /dev/loop0 $IMG
@@ -230,47 +182,22 @@ if [ ! -f $IMG ]; then
 	mkfs.ext4 -L root -b 4096 -E stride=4,stripe_width=1024 /dev/loop0p2
 	#mkdir -p arch-boot
 	#mount /dev/loop0p1 arch-boot
-  mkdir -p pine64boot
-  if [ ! -f "pine64boot/$BOOTSCR" ]; then
-
-  wget -N $URL1 -O pine64boot/$BOOTSCR
+  mkdir -p $SRCDIR/pine64boot
+  if [ ! -f "$SRCDIR/pine64boot/boot.scr" ]; then
+  wget -P $SRCDIR/pine64boot/ -N ${BASEURL}/allwinner/boot/pine64/boot.scr
   fi
-  dd if=pine64boot/$BOOTSCR of=/dev/loop0 bs=8k seek=1
+  dd if=pine64boot/boot.scr of=/dev/loop0 bs=8k seek=1
 	mkdir -p arch-root
 	mount /dev/loop0p2 arch-root
-	bsdtar -xpf $GENERICAARCH64GZ -C arch-root
+	bsdtar -xpf $SRCDIR/ArchLinuxARM-aarch64-latest.tar.gz -C arch-root
 	#sed -i "s/ defaults / defaults,noatime /" arch-root/etc/fstab
 	#mv arch-root/boot/* arch-boot/
-  if [ ! -f "pine64boot/$UBOOT" ]; then
-  wget -N $URL2 -O pine64boot/$UBOOT
-fi
-  cp pine64boot/$UBOOT  arch-root/boot/$UBOOT
-  #add bootstrapping packages
-
-  if [ -d "$_packagedir" ]; then
-    cd $_packagedir
-    toinstall=$(ls *.pkg.tar.*)
-    cd ..
-    for i in $toinstall; do
-    cp $_packagedir/$i arch-root/root/$i
-    done
-    #cp $WORKINGDIR/profile_skyalarm arch-root/etc/
-    #echo -e "[[ -f /etc/profile_skyalarm ]] && . /etc/profile_skyalarm" >> arch-root/etc/profile
-    cp /usr/bin/qemu-arm-static arch-root/usr/bin
-    #	arch-chroot arch-root pacman -U /root/*.pkg.tar.xz --noconfirm
-    #manually chroot to support image creation on other distros
-    mount -t proc /proc arch-root/proc
-    mount -o bind /dev arch-root/dev
-    mount -o bind /dev/pts arch-root/dev/pts
-    mount -o bind /sys arch-root/sys
-    chroot arch-root /bin/bash -c "pacman -U /root/*.pkg.tar.* --noconfirm"
-    rm arch-root/usr/bin/qemu-arm-static
-    umount arch-root/proc
-    umount arch-root/sys
-    umount arch-root/dev/pts
-    umount arch-root/dev
+  if [ ! -f "$SRCDIR/pine64boot/u-boot-sunxi-with-spl.bin" ]; then
+    wget -N ${BASEURL}/allwinner/boot/pine64/u-boot-sunxi-with-spl.bin
   fi
-    umount arch-root
+  cp pine64boot/u-boot-sunxi-with-spl.bin  arch-root/boot/u-boot-sunxi-with-spl.bin
+  modify_chroot
+  umount arch-root
   losetup -d /dev/loop0
 fi
 if [ -f $IMG ]; then
@@ -290,6 +217,27 @@ static_img_created() {
   $(ls $OUTDIR/*.img)" 0 0
 }
 
+create_all_base() {
+  IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d)
+  create_orpi_prime_img
+  IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d)
+  create_orpi_zero_img
+  IMG=rpi2-archlinux-armv7-$(date +%Y%m%d)
+  URL=$BASEURL/ArchLinuxARM-rpi-2-latest.tar.gz
+  RPIMG=ArchLinuxARM-rpi-2-latest.tar.gz
+  create_rpi_img
+  IMG=rpi3-archlinux-armv7-$(date +%Y%m%d)
+  URL=$BASEURL/ArchLinuxARM-rpi-3-latest.tar.gz
+  RPIMG=ArchLinuxARM-rpi-3-latest.tar.gz
+  create_rpi_img
+  IMG=rpi4-archlinux-armv8-$(date +%Y%m%d)
+  URL=$BASEURL/ArchLinuxARM-rpi-4-latest.tar.gz
+  RPIMG=ArchLinuxARM-rpi-4-latest.tar.gz
+  create_rpi_img
+  IMG=pine64-archlinux-aarch64-$(date +%Y%m%d)
+  create_pine64_img
+}
+
 select_board_dhcp() {
    $DIALOG1 \
    --title "Choose Board Type" \
@@ -304,42 +252,33 @@ select_board_dhcp() {
 
     case $(cat ${ANSWER}) in
       "1")
-      PLATFORM=orangepiprime
-      IMG=$PLATFORM-$AARCH64IMG
+      IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d)
       create_orpi_prime_img
       break ;;
       "2")
-      PLATFORM=orangepizero
-      IMG=$PLATFORM-$ARMV7IMG
+      IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d)
       create_orpi_zero_img
       break ;;
       "3")
-      PLATFORM=rpi2
-      IMG=$PLATFORM-$ARMV7IMG
-      FULLIMGNAME=$IMG
-      URL=$BASEURL$RPI2GZ
-      RPIMG=$RPI2GZ
+      IMG=rpi2-archlinux-armv7-$(date +%Y%m%d)
+      URL=$BASEURL/ArchLinuxARM-rpi-2-latest.tar.gz
+      RPIMG=ArchLinuxARM-rpi-2-latest.tar.gz
       create_rpi_img
       break ;;
       "4")
-      PLATFORM=rpi3
-      IMG=$PLATFORM-$ARMV7IMG
-      FULLIMGNAME=$IMG
-      URL=$BASEURL$RPI3GZ
-      RPIMG=$RPI3GZ
+      IMG=rpi3-archlinux-armv7-$(date +%Y%m%d)
+      URL=$BASEURL/ArchLinuxARM-rpi-3-latest.tar.gz
+      RPIMG=ArchLinuxARM-rpi-3-latest.tar.gz
       create_rpi_img
       break ;;
       "5")
-      PLATFORM=rpi4
-      IMG=$PLATFORM-$ARMV8IMG
-      FULLIMGNAME=$IMG
-      URL=$BASEURL$RPI4GZ
-      RPIMG=$RPI4GZ
+      IMG=rpi4-archlinux-armv8-$(date +%Y%m%d)
+      URL=$BASEURL/ArchLinuxARM-rpi-4-latest.tar.gz
+      RPIMG=ArchLinuxARM-rpi-4-latest.tar.gz
       create_rpi_img
       break ;;
       "6")
-      PLATFORM=pine64
-      IMG=$PLATFORM-$AARCH64IMG
+      IMG=pine64-archlinux-aarch64-$(date +%Y%m%d)
       create_pine64_img
       break ;;
       "7")
@@ -366,47 +305,38 @@ select_board_static() {
     case $(cat ${ANSWER}) in
 
         "1")
-        PLATFORM=orangepiprime
-        IMG=$PLATFORM-$AARCH64IMG
+        IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d)
         create_orpi_prime_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
         "2")
-        PLATFORM=orangepizero
-        IMG=$PLATFORM-$ARMV7IMG
+        IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d)
         create_orpi_zero_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
         "3")
-        PLATFORM=rpi2
-        IMG=$PLATFORM-$ARMV7IMG
-        FULLIMGNAME=$IMG
-        URL=$BASEURL$RPI2GZ
-        RPIMG=$RPI2GZ
+        IMG=rpi2-archlinux-armv7-$(date +%Y%m%d)
+        URL=$BASEURL/ArchLinuxARM-rpi-2-latest.tar.gz
+        RPIMG=ArchLinuxARM-rpi-2-latest.tar.gz
         create_rpi_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
         "4")
-        PLATFORM=rpi3
-        IMG=$PLATFORM-$ARMV7IMG
-        FULLIMGNAME=$IMG
-        URL=$BASEURL$RPI3GZ
-        RPIMG=$RPI3GZ
+        IMG=rpi3-archlinux-armv7-$(date +%Y%m%d)
+        URL=$BASEURL/ArchLinuxARM-rpi-3-latest.tar.gz
+        RPIMG=ArchLinuxARM-rpi-3-latest.tar.gz
         create_rpi_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
         "5")
-        PLATFORM=rpi4
-     		IMG=$PLATFORM-$ARMV8IMG
-        FULLIMGNAME=$IMG
-        URL=$BASEURL$RPI4GZ
-        RPIMG=$RPI4GZ
+     		IMG=rpi4-archlinux-armv8-$(date +%Y%m%d)
+        URL=$BASEURL/ArchLinuxARM-rpi-4-latest.tar.gz
+        RPIMG=ArchLinuxARM-rpi-4-latest.tar.gz
      		create_rpi_img
         create_ip_preset_imgs $SKY_MGR_IP 1
      		break ;;
         "6")
-        PLATFORM=pine64
-        IMG=$PLATFORM-$AARCH64IMG
+        IMG=pine64-archlinux-aarch64-$(date +%Y%m%d)
         create_pine64_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
@@ -726,9 +656,10 @@ main_menu() {
    $DIALOG1 \
    --title "Choose Installation Type" \
    --menu "Please select: " 0 0 1 \
-    "1" "Official Skyminer (8 image set)" \
-    "2" "Single IP preset image" \
-    "3" "DHCP image" 2> answer
+    "1" "Official Skyminer (8 Image Set)" \
+    "2" "Single IP Preset Image" \
+    "3" "DHCP Image"
+    "4" "All Base images" 2> answer
 #    HIGHLIGHT=$(cat ${ANSWER})
     case $(cat answer) in
         "1")
@@ -740,6 +671,9 @@ main_menu() {
         ;;
         "3")
         select_board_dhcp
+        ;;
+        "4")
+        create_all_base
         ;;
         *)
         exit 1

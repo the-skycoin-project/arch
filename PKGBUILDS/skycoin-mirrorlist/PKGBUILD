@@ -1,0 +1,19 @@
+# Maintainer: Moses Narrow <moe_narrow@use.startmail.com>
+pkgname=skycoin-mirrorlist
+_reponame=skycoin-mirrorlist
+pkgver=2
+pkgrel=1
+pkgdesc="Skycoin mirrorlist"
+arch=('x86_64' 'aarch64' 'armhf' 'armel' 'arm' 'armv6h' 'armv7h')
+url="https://github.com/skycoin"
+options=(!strip !emptydirs)
+backup=("etc/pacman.d/$pkgname")  # to keep possibly ranked mirrorlist
+# https://github.com/endeavouros-team/PKGBUILDS/raw/master/endeavouros-mirrorlist/endeavouros-mirrorlist
+# https://github.com/skyfleet/archlinuxarm/raw/master/PKGBUILDS/skycoin-mirrorlist/skycoin-mirrorlist
+source=("$url/archlinuxarm/raw/master/PKGBUILDS/$_reponame/$pkgname")
+sha512sums=('da2570a72d90009318836c3787ff0e0f553f5e1ad078e257223dd2ab955d63d83734f3713c90d7393449400ebc94af4971433f1c4e32128676a7b8ef640a3ee7')
+
+package() {
+ mkdir -p "$pkgdir/etc/pacman.d"
+ install -Dm644 "$srcdir/$pkgname" "$pkgdir/etc/pacman.d/$pkgname"
+}

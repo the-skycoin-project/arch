@@ -1,0 +1,20 @@
+# Maintainer: Moses Narrow <moe_narrow@use.startmail.com>
+pkgname=macchanger-service
+_pkgname=macchanger-service
+pkgdesc="macchanger systemd service"
+pkgver=0.0.1
+pkgrel=1
+arch=('x86_64' 'aarch64' 'armhf' 'armel' 'arm' 'armv6h' 'armv7h')
+license=()
+depends=(macchanger)
+source=("macchanger.service"
+"macchanger-service.install")
+sha256sums=('01319ab9a08ebe4f21a6da948361c44553c2b53f8c70730c6c6c9ddba591467a'
+            'cd6bac0eb65d85bf98e9a89a3d2dc9c961a1882a567c952346de4b68e164e42f')
+install=macchanger-service.install
+package() {
+	_services=$(ls *.service)
+for i in $_services ; do
+	install -Dm644 ${i} ${pkgdir}/usr/lib/systemd/system/${i}
+	done
+}

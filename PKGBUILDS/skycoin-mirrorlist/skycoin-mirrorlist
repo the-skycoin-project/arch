@@ -1,0 +1,27 @@
+######################################################
+####                                              ####
+###        Skycoin Package Repository Mirrorlist       ###
+####                                              ####
+######################################################
+#### Entry in file /etc/pacman.conf:
+###     [skycoin]
+###     SigLevel = PackageRequired
+###     Include = /etc/pacman.d/skycoin-mirrorlist
+######################################################
+
+
+## Github
+Server = https://github.com/skyfleet/archlinuxarm/releases/download/$arch/
+
+#Alternative with repo-in-repo; git-cloneable- not currently imlemented due to size
+#Server = https://raw.githubusercontent.com/skyfleet/archlinuxarm/master/$repo/$arch
+
+#future work:
+
+## Official Gthub:
+#Server = https://github.com/skycoin/archlinuxarm/releases/download/mirror/
+#Server = https://raw.githubusercontent.com/skycoin/archlinuxarm/master/$repo/$arch
+
+
+## Skycoin.com
+#Server = https://pkg.skycoin.com/$repo/$arch

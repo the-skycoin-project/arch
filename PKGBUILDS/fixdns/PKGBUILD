@@ -1,0 +1,27 @@
+# Maintainer: Moses Narrow <moe_narrow@use.startmail.com>
+pkgname=fixdns
+_pkgname=$pkgname
+pkgdesc="toggle systemd-resolved.service to fix DNS resolution issues on archlinuxARM"
+pkgver=0.0.1
+pkgrel=1
+arch=('x86_64' 'aarch64' 'armhf' 'armel' 'arm' 'armv6h' 'armv7h')
+license=()
+source=("https://github.com/skyfleet/archlinuxarm/raw/master/PKGBUILDS/fixdns/fixdns.sh"
+  "https://github.com/skyfleet/archlinuxarm/raw/master/PKGBUILDS/fixdns/fixdns.service"
+  "https://github.com/skyfleet/archlinuxarm/raw/master/PKGBUILDS/fixdns/fixdns.install"
+  )
+sha256sums=('6c0d38114d8ed695539adb1e3f6e2a260247758c814386097ae3cdab78314fdb'
+            '89ddbf49589fec8ee8346eaf39300f17e51e1214e8b32769f13e014a700098b2'
+            '1957e00d865e8d1c56f73adf2e93923c51eb59be1f734f3af95a5156529a4471')
+install=$pkgname.install
+package() {
+	_rmextension=".sh"
+	_scripts=$(ls *.sh)
+	_services=$(ls *.service)
+for i in $_scripts ; do
+  install -Dm755 ${i} ${pkgdir}/usr/bin/${i//$rmextension}
+done
+for i in $_services ; do
+	install -Dm644 ${i} ${pkgdir}/usr/lib/systemd/system/${i}
+	done
+}

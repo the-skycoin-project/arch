@@ -1,0 +1,18 @@
+# Maintainer: EndeavourOS-Team <info@endeavouros.com>
+
+pkgname=skyminer
+pkgdesc="Required packages in EndeavourOS."
+pkgver=1.1
+pkgrel=1
+arch=('x86_64' 'aarch64' 'armhf' 'armel' 'arm' 'armv6h' 'armv7h')
+license=('GPL')
+depends=(
+  base
+  skycoin-keyring
+  skycoin-mirrorlist
+)
+url="https://github.com/skyfleet/archlinuxarm/raw/master/PKGBUILDS/$pkgname"
+
+package() {
+  echo Done.
+}

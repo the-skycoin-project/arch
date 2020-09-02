@@ -1,0 +1,12 @@
+[Unit]
+Description=fix dns service
+After=network.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/fixdns
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

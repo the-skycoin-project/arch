@@ -1,0 +1,25 @@
+# Maintainer: Moses Narrow <moe_narrow@use.startmail.com>
+pkgname=bootstrap
+_pkgname=bootstrap
+pkgdesc="archlinux(arm) bootstrapping script"
+pkgver=0.0.1
+pkgrel=1
+arch=('any')
+license=()
+makedepends=()
+source=(
+"bootstrap.sh"
+)
+sha256sums=('1537bbfd2cdc979d34e76154a2174e2b5502d69e22bf21dac1dc01e58167c01a')
+
+package() {
+	_rmextension=".sh"
+	_scripts=$(ls *.sh)
+	_services=$(ls *.service)
+for i in $_scripts ; do
+  install -Dm755 ${i} ${pkgdir}/usr/bin/${i//$rmextension}
+done
+for i in $_services ; do
+	install -Dm644 ${i} ${pkgdir}/usr/lib/systemd/system/${i}
+done
+}
