@@ -64,3 +64,15 @@ For details on adding the hypervisor key to the visor's config.json refer to the
 Scripts for generating the tls key and cert have been included in the package installation at `/usr/lib/skycoin/skywire`
 
 It is left to the user to accomplish additional configuration.
+
+## Start Skywire
+
+start skywire hypervisor
+```
+systemctl enable --now skywire-hypervisor
+```
+
+start skywire visor
+```
+systemctl enable --now skywire-visor
+```
