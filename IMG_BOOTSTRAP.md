@@ -1,21 +1,15 @@
 ## Bootstrapping Procedure Overview
 
-First and foremost:
-**Power on only one board at a time to avoid mac address conflicts**
-
-
 * Insert the microSD card into the board
 * Power on the board
 * SSH to the board
-* Run the `bootstrap` command (script)
-* Wait for the bootstrapping to complete (board should reboot)
-* SSH to the board again
-* Install your desired software (skywire)
-
+* Initialize and populate pacman-key
+* Sync available package database and update
+* Generate visor, hypervisor config .jsons
+* Set hypervisor key in visor configs
+* Enable and start the corresponding systemd service
 
 # Bootstrapping Procedure Details
-
-I would encourage users to scrutinize the [bootstrap.sh](/bootstrap/bootstrap.sh) and [bootstrap-alarm.sh](bootstrap/bootstrap-alarm.sh) scripts for the details of the bootstrapping procedure. Basic bootstrapping is detailed on [archlinuxarm.org](https://archlinuxarm.org)
 
 ## 1) Access the board via SSH
 
@@ -38,74 +32,35 @@ You will need to remove the line in ~/.ssh/known_hosts every time before attempt
 grep -v "^alarm" $HOME/.ssh/known_hosts > $HOME/.ssh/known_hosts.bak && mv $HOME/.ssh/known_hosts.bak $HOME/.ssh/known_hosts
 ```
 
-## 2) Run the bootstrap command as root
+## 2) Bootstrap & update
 
-Become root:
-```
-su - root
-#password is root
-```
 
-Run the provided bootstrapping script
+Initialize and populate the pacman-keyring
 ```
-bootstrap
+sudo pacman-key --init
+sudo pacman-key --populate
 ```
 
-It may take 15-20 minutes for the initial configuration and software updates to complete, at which point the board should reboot.
-
-## 3) Install Skywire
-
-Access the alarm account on the board via ssh as detailed in step 1.
-
-Install skywire with one of the following commands;
-
-For the latest versioned binary release:
+Update the system
 ```
-yay -S skywire-bin
+sudo pacman -Syy
+sudo pacman -Syu
 ```
 
-To build from the latest github sources on the develop branch:
-```
-yay -S skywire
-```
+## 3) Configure Skywire
 
-**The usual configuration steps have been carried out at the packaging level to automatically configure and start a visor and hypervisor.**
-
-To configure aditional nodes to appear in the hypervisor interface, you must run the following **FROM THE HYPERVISOR**:
-
+Create the hypervisor config:
 ```
-skywire
+sudo skywire-hypervisor gen-config -o /etc/skywire-hypervisor.json
 ```
 
-You will be prompted to run or start the readonly-cache service.
+Create the visor config:
 ```
-sudo readonly-cache
-```
-
-## 4) Setting up additional nodes faster
-
-When you have one board running archlinuxARM on your local network, you can bootstrap additional nodes much faster by first configuring them to use the shared package cache of the first board. In addition to acting as an update mirror, all created [AUR packages](https://aur.archlinux.org) (which include `yay`, `skywire`, etc.) are added to a local package repoitory. Here is how to configure each of these:
-
-To configure the local package repository, add these lines to `/etc/pacman.conf` on each **additional** node
-```
-[aur-local]
-SigLevel = PackageOptional
-Server = http://<ip-of-other-machine-on-lan>:8079
+sudo skywire-cli visor gen-config -o /etc/skywire-visor.json
 ```
 
-To set the first board as an update mirror for the others, add this line to `/etc/pacman.d/mirrorlist`  on each **additional** node
-```
-Server = http://<ip-of-other-machine-on-lan>:8079
-```
+For details on adding the hypervisor key to the visor's config.json refer to the relevant parts of the [skywire wiki](https://github.com/skycoin/skywire/wiki/Skywire-Mainnet-Installation-From-Source) on installation from source.
 
-**Then** run the `bootstrap` command as root which was covered in step 2
+Scripts for generating the tls key and cert have been included in the package installation at `/usr/lib/skycoin/skywire`
 
-## 5) Configuring additional Visors with the hypervisor key
-
-Before you install skywire on additional boards, install the hypervisorconfig package. This pacage is provided by the local package repo on the first board you configured.
-
-After installing skywire, the visor will appear in the hypervisor.
-
-By this point, you have configured one or more boards with archlinuxARM on your local network.
-
-Continue with the [OS updating and troubleshooting guide](/IMG_UPDATE.md)
+It is left to the user to accomplish additional configuration.
