@@ -2,14 +2,15 @@
 
 ## 1) Download a Release Image
 
-* [Orange Pi Prime](https://github.com/Skyfleet/archlinuxarm/releases/download/images/orangepiprime-archlinux-aarch64-20200704.img.tar.gz)
-* [Orange Pi Zero](https://github.com/Skyfleet/archlinuxarm/releases/download/images/orangepizero-archlinux-armv7-20200704.img.tar.gz)
-* [Pine64](https://github.com/Skyfleet/archlinuxarm/releases/download/images/pine64-archlinux-aarch64-20200704.img.tar.gz)
-* [RPi 2](https://github.com/Skyfleet/archlinuxarm/releases/download/images/rpi2-archlinux-armv7-20200704.img.tar.gz)
-* [RPi 3](https://github.com/Skyfleet/archlinuxarm/releases/download/images/rpi3-archlinux-armv7-20200704.img.tar.gz)
-* [RPi 4](https://github.com/Skyfleet/archlinuxarm/releases/download/images/rpi4-archlinux-armv8-20200704.img.tar.gz)
+* [Orange Pi Prime](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/orange_pi_prime.img.tar.gz)
+* [Orange Pi Zero](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/orange_pi_zero.img.tar.gz)
+* [Pine64](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/pine_64.img.tar.gz)
+* [RPi 2](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/rpi2.img.tar.gz)
+* [RPi 3](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/rpi3.img.tar.gz)
+* [RPi 4](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/rpi4.img.tar.gz)
 
-DHCP images are provided by the above links. If you require ip-preset images, please create them with the image-creator.sh script as detailed [here](/IMG_CREATOR.md).
+
+DHCP images are provided by the above links.
 
 ## 2) Extract the image from the archive
 
