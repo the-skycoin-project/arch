@@ -25,32 +25,32 @@ ensure_cleanup() {
 }
 ensure_cleanup
 
-modify_chroot() {
-  #add bootstrapping packages
-  if [ -d "$_packagedir" ]; then
-    cd $_packagedir
-    toinstall=$(ls *.pkg.tar.*)
-    cd ..
-    for i in $toinstall; do
-    cp $_packagedir/$i arch-root/root/$i
-    done
-    cp pacman.conf arch-root/etc/pacman.conf
-    cp /usr/bin/qemu-arm-static arch-root/usr/bin
-    #	arch-chroot arch-root pacman -U /root/*.pkg.tar.xz --noconfirm
-    #manually chroot to support image creation on other distros
-    mount -t proc /proc arch-root/proc
-    mount -o bind /dev arch-root/dev
-    mount -o bind /dev/pts arch-root/dev/pts
-    mount -o bind /sys arch-root/sys
-    chroot arch-root /bin/bash -c "pacman -U /root/*.pkg.tar.* --noconfirm"
-    rm arch-root/usr/bin/qemu-arm-static
-    umount arch-root/proc
-    umount arch-root/sys
-    umount arch-root/dev/pts
-    umount arch-root/dev
-  fi
-
-}
+#modify_chroot() {
+#  #add bootstrapping packages
+#  if [ -d "$_packagedir" ]; then
+#    cd $_packagedir
+#    toinstall=$(ls *.pkg.tar.*)
+#    cd ..
+#    for i in $toinstall; do
+#    cp $_packagedir/$i arch-root/root/$i
+#    done
+#    cp pacman.conf arch-root/etc/pacman.conf
+#    cp /usr/bin/qemu-arm-static arch-root/usr/bin
+#    #	arch-chroot arch-root pacman -U /root/*.pkg.tar.xz --noconfirm
+#    #manually chroot to support image creation on other distros
+#    mount -t proc /proc arch-root/proc
+#    mount -o bind /dev arch-root/dev
+#    mount -o bind /dev/pts arch-root/dev/pts
+#    mount -o bind /sys arch-root/sys
+#    chroot arch-root /bin/bash -c "pacman -U /root/*.pkg.tar.* --noconfirm"
+#    rm arch-root/usr/bin/qemu-arm-static
+#    umount arch-root/proc
+#    umount arch-root/sys
+#    umount arch-root/dev/pts
+#    umount arch-root/dev
+#  fi
+#
+#}
 
 create_rpi_img(){
   #rpi2
@@ -91,10 +91,11 @@ fi
 	bsdtar -xpf $ROOTFSGZPATH -C arch-root
 	sed -i "s/ defaults / defaults,noatime /" arch-root/etc/fstab
 	mv arch-root/boot/* arch-boot/
-  modify_chroot
+  #modify_chroot
   umount arch-boot arch-root
   losetup -d /dev/loop0
 fi
+mv $SRCDIR/$IMG $OUTDIR/$IMG
 if [ -f $IMGPATH ]; then
 img_created
 fi
@@ -120,13 +121,15 @@ if [ ! -f $IMG ]; then
 	rm -rf arch-root/bin arch-root/dev arch-root/home arch-root/mnt arch-root/proc arch-root/run arch-root/srv arch-root/tmp arch-root/var arch-root/etc arch-root/lib arch-root/opt arch-root/root arch-root/sbin arch-root/sys arch-root/usr
 	#cd $WORKINGDIR
 	bsdtar -xpf $SRCDIR/ArchLinuxARM-aarch64-latest.tar.gz -C arch-root --exclude 'boot'
-modify_chroot
+#modify_chroot
 umount arch-root
 losetup -d /dev/loop0
 mv $SRCDIR/ArchPrimeH5.img $OUTDIR/$IMG
 fi
-if [ -f $IMG ]; then
+if [ -f $OUTDIR/$IMG ]; then
 img_created
+else
+  echo "error has occured!!"
 fi
 }
 
@@ -147,14 +150,16 @@ create_orpi_zero_img() {
     mount  /dev/loop0p1 arch-root
     rm -rf arch-root/bin arch-root/dev arch-root/home arch-root/mnt arch-root/proc arch-root/run arch-root/srv arch-root/tmp arch-root/var arch-root/etc arch-root/lib arch-root/opt arch-root/root arch-root/sbin arch-root/sys arch-root/usr
     bsdtar -xpf $SRCDIR/ArchLinuxARM-armv7-latest.tar.gz -C arch-root --exclude 'boot'
-    modify_chroot
+    #modify_chroot
     umount arch-root
     losetup -d /dev/loop0
-    mv $SRCDIR/ArchLinuxARM-OrangePiZero-latest.img $IMG
+    mv $SRCDIR/ArchLinuxARM-OrangePiZero-latest.img $OUTDIR/$IMG
   fi
-    if [ -f $IMG ]; then
-      img_created
-    fi
+  if [ -f $OUTDIR/$IMG ]; then
+  img_created
+  else
+    echo "error has occured!!"
+  fi
 }
 
 create_pine64_img(){
@@ -196,19 +201,22 @@ if [ ! -f $IMG ]; then
     wget -N ${BASEURL}/allwinner/boot/pine64/u-boot-sunxi-with-spl.bin
   fi
   cp pine64boot/u-boot-sunxi-with-spl.bin  arch-root/boot/u-boot-sunxi-with-spl.bin
-  modify_chroot
+  #modify_chroot
   umount arch-root
   losetup -d /dev/loop0
 fi
-if [ -f $IMG ]; then
+    mv $SRCDIR/$IMG $OUTDIR/$IMG
+if [ -f $OUTDIR/$IMG ]; then
 img_created
+else
+  echo "error has occured!!"
 fi
 }
 
 img_created() {
   $DIALOG1 \
   --title "DHCP base image created at:" --msgbox "
-  $(ls $WORKINGDIR/$IMG)" 0 0
+  $(ls $OUTDIR/$IMG)" 0 0
 }
 
 static_img_created() {
@@ -218,23 +226,23 @@ static_img_created() {
 }
 
 create_all_base() {
-  IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d)
+  IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d).img
   create_orpi_prime_img
-  IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d)
+  IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d).img
   create_orpi_zero_img
-  IMG=rpi2-archlinux-armv7-$(date +%Y%m%d)
+  IMG=rpi2-archlinux-armv7-$(date +%Y%m%d).img
   URL=$BASEURL/ArchLinuxARM-rpi-2-latest.tar.gz
   RPIMG=ArchLinuxARM-rpi-2-latest.tar.gz
   create_rpi_img
-  IMG=rpi3-archlinux-armv7-$(date +%Y%m%d)
+  IMG=rpi3-archlinux-armv7-$(date +%Y%m%d).img
   URL=$BASEURL/ArchLinuxARM-rpi-3-latest.tar.gz
   RPIMG=ArchLinuxARM-rpi-3-latest.tar.gz
   create_rpi_img
-  IMG=rpi4-archlinux-armv8-$(date +%Y%m%d)
+  IMG=rpi4-archlinux-armv8-$(date +%Y%m%d).img
   URL=$BASEURL/ArchLinuxARM-rpi-4-latest.tar.gz
   RPIMG=ArchLinuxARM-rpi-4-latest.tar.gz
   create_rpi_img
-  IMG=pine64-archlinux-aarch64-$(date +%Y%m%d)
+  IMG=pine64-archlinux-aarch64-$(date +%Y%m%d).img
   create_pine64_img
 }
 
@@ -252,33 +260,33 @@ select_board_dhcp() {
 
     case $(cat ${ANSWER}) in
       "1")
-      IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d)
+      IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d).img
       create_orpi_prime_img
       break ;;
       "2")
-      IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d)
+      IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d).img
       create_orpi_zero_img
       break ;;
       "3")
-      IMG=rpi2-archlinux-armv7-$(date +%Y%m%d)
+      IMG=rpi2-archlinux-armv7-$(date +%Y%m%d).img
       URL=$BASEURL/ArchLinuxARM-rpi-2-latest.tar.gz
       RPIMG=ArchLinuxARM-rpi-2-latest.tar.gz
       create_rpi_img
       break ;;
       "4")
-      IMG=rpi3-archlinux-armv7-$(date +%Y%m%d)
+      IMG=rpi3-archlinux-armv7-$(date +%Y%m%d).img
       URL=$BASEURL/ArchLinuxARM-rpi-3-latest.tar.gz
       RPIMG=ArchLinuxARM-rpi-3-latest.tar.gz
       create_rpi_img
       break ;;
       "5")
-      IMG=rpi4-archlinux-armv8-$(date +%Y%m%d)
+      IMG=rpi4-archlinux-armv8-$(date +%Y%m%d).img
       URL=$BASEURL/ArchLinuxARM-rpi-4-latest.tar.gz
       RPIMG=ArchLinuxARM-rpi-4-latest.tar.gz
       create_rpi_img
       break ;;
       "6")
-      IMG=pine64-archlinux-aarch64-$(date +%Y%m%d)
+      IMG=pine64-archlinux-aarch64-$(date +%Y%m%d).img
       create_pine64_img
       break ;;
       "7")
@@ -305,38 +313,38 @@ select_board_static() {
     case $(cat ${ANSWER}) in
 
         "1")
-        IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d)
+        IMG=orangepiprime-archlinux-aarch64-$(date +%Y%m%d).img
         create_orpi_prime_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
         "2")
-        IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d)
+        IMG=orangepizero-archlinux-armv7-$(date +%Y%m%d).img
         create_orpi_zero_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
         "3")
-        IMG=rpi2-archlinux-armv7-$(date +%Y%m%d)
+        IMG=rpi2-archlinux-armv7-$(date +%Y%m%d).img
         URL=$BASEURL/ArchLinuxARM-rpi-2-latest.tar.gz
         RPIMG=ArchLinuxARM-rpi-2-latest.tar.gz
         create_rpi_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
         "4")
-        IMG=rpi3-archlinux-armv7-$(date +%Y%m%d)
+        IMG=rpi3-archlinux-armv7-$(date +%Y%m%d).img
         URL=$BASEURL/ArchLinuxARM-rpi-3-latest.tar.gz
         RPIMG=ArchLinuxARM-rpi-3-latest.tar.gz
         create_rpi_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
         "5")
-     		IMG=rpi4-archlinux-armv8-$(date +%Y%m%d)
+     		IMG=rpi4-archlinux-armv8-$(date +%Y%m%d).img
         URL=$BASEURL/ArchLinuxARM-rpi-4-latest.tar.gz
         RPIMG=ArchLinuxARM-rpi-4-latest.tar.gz
      		create_rpi_img
         create_ip_preset_imgs $SKY_MGR_IP 1
      		break ;;
         "6")
-        IMG=pine64-archlinux-aarch64-$(date +%Y%m%d)
+        IMG=pine64-archlinux-aarch64-$(date +%Y%m%d).img
         create_pine64_img
         create_ip_preset_imgs  $SKY_MGR_IP 1
         break ;;
@@ -384,6 +392,7 @@ SKY_MGR_IP=$1
   exit
 }
 
+#the hostname is the filename, inside is the static ip
 hostname_set() {
   set +e
   rm $CUSTDIR/*
@@ -552,7 +561,7 @@ fi
       HIGHLIGHT=2
       hostname_set
       IMGHOSTNAME=$(ls *)
-      if [ $IMGHOSTNAME != *"skymanager"* ]; then
+      if [ $IMGHOSTNAME != *"hypervisor"* ]; then
       mgr_ip_enter
       fi
       ;;
@@ -658,7 +667,7 @@ main_menu() {
    --menu "Please select: " 0 0 1 \
     "1" "Official Skyminer (8 Image Set)" \
     "2" "Single IP Preset Image" \
-    "3" "DHCP Image"
+    "3" "DHCP Image" \
     "4" "All Base images" 2> answer
 #    HIGHLIGHT=$(cat ${ANSWER})
     case $(cat answer) in
