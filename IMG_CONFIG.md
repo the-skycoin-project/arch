@@ -2,12 +2,11 @@
 
 ## 1) Download a Release Image
 
-* [Orange Pi Prime](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/orange_pi_prime.img.tar.gz)
-* [Orange Pi Zero](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/orange_pi_zero.img.tar.gz)
-* [Pine64](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/pine_64.img.tar.gz)
-* [RPi 2](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/rpi2.img.tar.gz)
-* [RPi 3](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/rpi3.img.tar.gz)
-* [RPi 4](https://github.com/Skyfleet/archlinuxarm/releases/download/latest/rpi4.img.tar.gz)
+* [Orange Pi Prime](https://github.com/the-skycoin-project/arch/releases/download/202101/orangepiprime-archlinux-aarch64-20210106.img.tar.gz)
+* [Orange Pi Zero](https://github.com/the-skycoin-project/arch/releases/download/202101/orangepizero-archlinux-armv7-20210106.img.tar.gz)
+* [Pine64](https://github.com/Skyfleet/archlinuxarm/releases/download/images/pine64-archlinux-aarch64-20200704.img.tar.gz)
+* [RPi 2](https://github.com/the-skycoin-project/arch/releases/download/202101/rpi2-archlinux-armv7-20210106.img.tar.gz)
+* [RPi 4](https://github.com/the-skycoin-project/arch/releases/download/202101/rpi4-archlinux-armv8-20210106.img.tar.gz)
 
 
 DHCP images are provided by the above links.

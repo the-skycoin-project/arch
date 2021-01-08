@@ -1,13 +1,12 @@
 ## Bootstrapping Procedure Overview
 
-* Insert the microSD card into the board
+* Insert the prepared microSD card into the board
 * Power on the board
 * SSH to the board
 * Initialize and populate pacman-key
 * Sync available package database and update
-* Generate visor, hypervisor config .jsons
-* Set hypervisor key in visor configs
-* Enable and start the corresponding systemd service
+* Install `git` and build `yay`
+* use `yay` to install `skywire` from the [AUR](https://aur.archlinux.org)
 
 # Bootstrapping Procedure Details
 
@@ -32,8 +31,9 @@ You will need to remove the line in ~/.ssh/known_hosts every time before attempt
 grep -v "^alarm" $HOME/.ssh/known_hosts > $HOME/.ssh/known_hosts.bak && mv $HOME/.ssh/known_hosts.bak $HOME/.ssh/known_hosts
 ```
 
-## 2) Bootstrap & update
+## 2) Bootstrap & Update
 
+__note that you will want to install sudo and set sudo permissions for your user after preforming the following steps as root.__
 
 Initialize and populate the pacman-keyring
 ```
@@ -47,32 +47,35 @@ sudo pacman -Syy
 sudo pacman -Syu
 ```
 
-## 3) Configure Skywire
+__Please note here that you should visit [archlinuxarm.org](https://archlinuxarm.org/) and follow any extra steps that may be specific to your board, such as installing the appropriate uboot package.__
 
-Create the hypervisor config:
-```
-sudo skywire-hypervisor gen-config -o /etc/skywire-hypervisor.json
-```
+## 3) build and install `yay`
 
-Create the visor config:
+first install `git` and `base-devel`
 ```
-sudo skywire-cli visor gen-config -o /etc/skywire-visor.json
+sudo pacman -S git base-devel
 ```
 
-For details on adding the hypervisor key to the visor's config.json refer to the relevant parts of the [skywire wiki](https://github.com/skycoin/skywire/wiki/Skywire-Mainnet-Installation-From-Source) on installation from source.
-
-Scripts for generating the tls key and cert have been included in the package installation at `/usr/lib/skycoin/skywire`
-
-It is left to the user to accomplish additional configuration.
-
-## Start Skywire
-
-start skywire hypervisor
+clone `yay` to its future cache dir
 ```
-systemctl enable --now skywire-hypervisor
+mkdir -p ~/.cache/yay && cd ~/.cache/yay
+git clone https:/aur.archlinux.org/yay-git
 ```
 
-start skywire visor
+build and install `yay`
 ```
-systemctl enable --now skywire-visor
+cd yay-git
+makepkg -sif
 ```
+
+`yay` should be installed and it's makedependancy, `golang`
+
+## Install Skywire with yay
+
+```
+yay -S skywire
+```
+
+The hypervisor should automatically start when the package has been installed. Note that cloning the skywire github repo and building the package may take 10-15 minutes.
+
+follow the prompts to configure additional nodes.
